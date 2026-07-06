@@ -1,0 +1,62 @@
+name: TNN Graph Value Ablation (on-demand)
+
+# Runs ablation_graph_value.py — does the k-NN graph term add genuine
+# out-of-sample value, or is fit_quality mostly driven by each ticker's own
+# autocorrelation? Deliberately NOT on the daily schedule: this answers an
+# investigative question about a specific universe/window combination, not
+# something that needs re-answering every day. Trigger manually from the
+# Actions tab, choosing the universe and window to test.
+#
+# Re-running the same universe/window adds a new dated result rather than
+# overwriting — the "🔬 Graph Value Ablation" dashboard tab shows the most
+# recent run for each (universe, window) combination you've tested.
+
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "Universe to test"
+        required: true
+        default: "FI_COMMODITIES"
+        type: choice
+        options:
+          - FI_COMMODITIES
+          - EQUITY_SECTORS
+          - COMBINED
+      window:
+        description: "Lookback window (trading days)"
+        required: true
+        default: "252"
+        type: choice
+        options:
+          - "63"
+          - "126"
+          - "252"
+          - "504"
+      epochs:
+        description: "Optional epoch override (blank = use config.TNN_EPOCHS)"
+        required: false
+        default: ""
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run ablation
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python ablation_graph_value.py \
+            --universe "${{ github.event.inputs.universe }}" \
+            --window "${{ github.event.inputs.window }}" \
+            ${{ github.event.inputs.epochs != '' && format('--epochs {0}', github.event.inputs.epochs) || '' }}
