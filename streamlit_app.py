@@ -115,7 +115,9 @@ universes2 = data2["universes"] if data2 and "error" not in data2 else None
 
 st.sidebar.markdown(f"**Run date:** `{data1.get('run_date','?')}`")
 
-tab1, tab2 = st.tabs(["🏆 Best Window per ETF", "🔍 Explore by Window"])
+tab1, tab2, tab3 = st.tabs([
+    "🏆 Best Window per ETF", "🔍 Explore by Window", "🔬 Graph Value Ablation",
+])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -308,3 +310,115 @@ with tab2:
         st.divider()
 
     st.caption(f"Window: {selected_win}d · Run date: {data2.get('run_date','?')}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 3 — Graph Value Ablation
+# ══════════════════════════════════════════════════════════════════════════════
+with tab3:
+    st.header("🔬 Does the Graph Actually Add Value?")
+
+    with st.expander("Methodology", expanded=True):
+        st.markdown("""
+Trains two models on **identical data, identical train/test day split, and
+identical random seed** — differing in exactly one thing:
+
+```
+Model A (graph)    : NeighborAvg(t) = A(t) @ X(t)     (real k-NN graph)
+Model B (no graph) : NeighborAvg(t) = 0                (self-only, same
+                                                          architecture,
+                                                          neighbor term
+                                                          forced dead)
+```
+
+The difference in **out-of-sample** (held-out, chronologically-last days)
+R² between A and B is the graph's genuine value-add. In-sample-only
+comparisons can be misleading — either model could simply be fitting noise
+in-sample.
+
+This is a separate, on-demand investigative tool — it does not run on the
+daily schedule, and you can run it for as many (universe, window)
+combinations as you want to check. Trigger it from the GitHub Actions tab:
+**"TNN Graph Value Ablation"**.
+        """)
+
+    ablation_files = [f for f in files if f.endswith(".json") and "ablation_" in f]
+    if not ablation_files:
+        st.warning(
+            "No ablation runs found yet. Trigger the **\"TNN Graph Value "
+            "Ablation\"** workflow from the GitHub Actions tab, choosing the "
+            "universe and window you want to test."
+        )
+        st.stop()
+
+    all_ablations = []
+    for f in ablation_files:
+        d = load_json(f)
+        if "error" not in d and "universe" in d:
+            all_ablations.append(d)
+
+    if not all_ablations:
+        st.error("Ablation files were found but none loaded successfully.")
+        st.stop()
+
+    # Group by (universe, window), keep the most recent run_date per combo —
+    # you can run this for as many combinations as you like over time.
+    latest_by_key = {}
+    for r in all_ablations:
+        key = (r["universe"], int(r["window"]))
+        if key not in latest_by_key or r["run_date"] > latest_by_key[key]["run_date"]:
+            latest_by_key[key] = r
+
+    keys_sorted = sorted(latest_by_key.keys())
+    labels = [f"{u} @ {w}d" for u, w in keys_sorted]
+    selected_label = st.selectbox("Select a tested universe / window combination", labels)
+    selected_key = keys_sorted[labels.index(selected_label)]
+    r = latest_by_key[selected_key]
+
+    st.markdown(
+        f"**Run date:** `{r.get('run_date','?')}`  ·  "
+        f"**Train days:** {r.get('train_days','?')}  ·  "
+        f"**Test days:** {r.get('test_days','?')}  ·  "
+        f"**Tickers:** {len(r.get('tickers', []))}"
+    )
+
+    a, b = r["model_a"], r["model_b"]
+    table = pd.DataFrame([
+        {"": "Model A (graph)",    "Train R²": a["train_r2"], "Train Corr": a["train_corr"],
+         "Test R²": a["test_r2"], "Test Corr": a["test_corr"]},
+        {"": "Model B (no graph)", "Train R²": b["train_r2"], "Train Corr": b["train_corr"],
+         "Test R²": b["test_r2"], "Test Corr": b["test_corr"]},
+    ])
+    st.dataframe(table, use_container_width=True, hide_index=True)
+
+    gain = r.get("test_r2_gain", 0.0)
+    m1, m2 = st.columns(2)
+    m1.metric("Out-of-sample R² gain from the graph", f"{gain:+.4f}")
+    if gain > 0.02:
+        m2.success("Graph adds genuine value")
+    elif gain < -0.02:
+        m2.error("Graph hurts generalization")
+    else:
+        m2.info("Negligible — mostly autocorrelation")
+
+    st.markdown(f"**Verdict:** {r.get('verdict', 'N/A')}")
+
+    if len(latest_by_key) > 1:
+        with st.expander("Compare all tested combinations"):
+            rows = []
+            for (u, w), rr in sorted(latest_by_key.items()):
+                rows.append({
+                    "Universe": u, "Window": w,
+                    "Test R² (graph)": rr["model_a"]["test_r2"],
+                    "Test R² (no graph)": rr["model_b"]["test_r2"],
+                    "Gain": rr["test_r2_gain"],
+                    "Run Date": rr["run_date"],
+                })
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    st.caption(
+        "A positive gain means the graph genuinely helps predict returns it "
+        "hasn't seen. A gain near zero means fit_quality in the main tabs is "
+        "likely driven mostly by each ticker's own autocorrelation, not the "
+        "k-NN neighbor structure."
+    )
