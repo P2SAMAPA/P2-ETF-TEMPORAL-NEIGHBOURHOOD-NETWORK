@@ -33,6 +33,7 @@ on:
           - "126"
           - "252"
           - "504"
+          - "1008"
       epochs:
         description: "Optional epoch override (blank = use config.TNN_EPOCHS)"
         required: false
