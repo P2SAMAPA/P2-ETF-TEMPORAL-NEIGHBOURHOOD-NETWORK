@@ -260,8 +260,9 @@ with tab2:
         st.markdown("""
 - **63d** — few days of graphs to learn from; reactive, noisier
 - **126d** — 6-month window; recommended minimum for a stable shared model
-- **252d** — 1-year window; most stable joint training set; recommended primary signal
+- **252d** — 1-year window; stable joint training set
 - **504d** — 2-year window; more days of graphs, but the universe's return-space clustering may shift across regimes within the window
+- **1008d** — ~4-year window; use this to test whether a universe's issues (e.g. persistent negative out-of-sample correlation) are a genuine sample-size problem or something more structural — if more data doesn't help, look at K_NEIGHBORS relative to the universe's ticker count before trusting scores there
         """)
 
     st.markdown(f"### TNN Rankings at **{selected_win}d** window")
