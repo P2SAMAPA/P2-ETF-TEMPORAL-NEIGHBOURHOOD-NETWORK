@@ -126,7 +126,7 @@ the graph is built*, not in a more elaborate aggregation mechanism.
 | EQUITY_SECTORS | SPY, QQQ, XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, GDX, XME, IWF, XSD, XBI, IWM, IWD, IWO, XLB, XLRE |
 | COMBINED | All of the above |
 
-**Windows:** `63d · 126d · 252d · 504d`
+**Windows:** `63d · 126d · 252d · 504d · 1008d`
 
 ---
 
