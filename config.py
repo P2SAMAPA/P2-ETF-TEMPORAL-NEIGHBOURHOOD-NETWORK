@@ -23,7 +23,14 @@ MACRO_COLS_CORE     = ["VIX", "DXY", "T10Y2Y"]
 MACRO_COLS_EXTENDED = ["IG_SPREAD", "HY_SPREAD"]
 
 # ── Rolling windows (trading days) ────────────────────────────────────────────
-WINDOWS = [63, 126, 252, 504]
+# 1008d (~4 years) added to test whether persistent structural issues (e.g.
+# FI_COMMODITIES showing negative out-of-sample correlation at both 252d and
+# 504d in ablation testing) are a genuine sample-size problem that more data
+# fixes, or something more structural (e.g. K_NEIGHBORS being too large
+# relative to a small universe). Needs len(prices) >= 1008 + ROLLING_FEATURE_
+# WINDOW + PRED_HORIZON + TNN_BATCH_DAYS (~1060 trading days, ~4.2 years) —
+# windows without enough history are skipped automatically, same as always.
+WINDOWS = [63, 126, 252, 504, 1008]
 
 # ── Temporal Neighbourhood Network hyperparameters ────────────────────────────
 # The graph is built from TEMPORAL PROXIMITY IN RETURN SPACE, not correlation
