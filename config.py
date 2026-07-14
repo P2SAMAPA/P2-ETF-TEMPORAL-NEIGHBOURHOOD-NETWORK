@@ -8,13 +8,13 @@ UNIVERSES = {
     "FI_COMMODITIES": ["TLT", "VCIT", "LQD", "HYG", "VNQ", "GLD", "SLV"],
     "EQUITY_SECTORS": [
         "SPY", "QQQ", "XLK", "XLF", "XLE", "XLV", "XLI", "XLY",
-        "XLP", "XLU", "GDX", "XME", "IWF", "XSD", "XBI",
+        "XLP", "XLU", "GDX", "XME", "IWF", "XSD", "XBI", "SMH", "SOXX", "XLB",
         "IWM", "IWD", "IWO", "XLB", "XLRE",
     ],
     "COMBINED": [
         "TLT", "VCIT", "LQD", "HYG", "VNQ", "GLD", "SLV",
         "SPY", "QQQ", "XLK", "XLF", "XLE", "XLV", "XLI", "XLY",
-        "XLP", "XLU", "GDX", "XME", "IWF", "XSD", "XBI",
+        "XLP", "XLU", "GDX", "XME", "IWF", "XSD", "XBI", "SMH", "SOXX", "XLB",
         "IWM", "IWD", "IWO", "XLB", "XLRE",
     ],
 }
